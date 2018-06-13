@@ -182,8 +182,6 @@ if '.' in opt.replace:
 else:
     setattr(seq2seq,opt.replace,component)
 
-for param in seq2seq.parameters():
-    print(param.requires_grad)
 # Prepare vocabulary
 input_vocab = checkpoint_A.input_vocab
 src.vocab = input_vocab
