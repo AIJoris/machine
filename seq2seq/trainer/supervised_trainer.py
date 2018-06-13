@@ -65,7 +65,7 @@ class SupervisedTrainer(object):
         decoder_outputs, decoder_hidden, other = model(input_variable, input_lengths, target_variable, teacher_forcing_ratio=teacher_forcing_ratio)
 
         losses = self.evaluator.compute_batch_loss(decoder_outputs, decoder_hidden, other, target_variable)
-        
+
         # Backward propagation
         for i, loss in enumerate(losses, 0):
             loss.scale_loss(self.loss_weights[i])
@@ -217,10 +217,10 @@ class SupervisedTrainer(object):
         return logs
 
     def train(self, model, data, num_epochs=5,
-              resume=False, dev_data=None, 
+              resume=False, dev_data=None,
               monitor_data={}, optimizer=None,
               teacher_forcing_ratio=0,
-              learning_rate=0.001, checkpoint_path=None, top_k=5):
+              learning_rate=0.001, checkpoint_path=None, top_k=5, frozen=False):
         """ Run training for a given model.
 
         Args:
@@ -265,7 +265,9 @@ class SupervisedTrainer(object):
                            None:optim.Adam}
                 return optims[optim_name]
 
-            self.optimizer = Optimizer(get_optim(optimizer)(model.parameters(), lr=learning_rate),
+            # self.optimizer = Optimizer(get_optim(optimizer)(model.parameters(), lr=learning_rate),
+            #                            max_grad_norm=5)
+            self.optimizer = Optimizer(get_optim(optimizer)(filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate),
                                        max_grad_norm=5)
 
         self.logger.info("Optimizer: %s, Scheduler: %s" % (self.optimizer.optimizer, self.optimizer.scheduler))
@@ -300,7 +302,7 @@ class SupervisedTrainer(object):
                 # We need this if there are attentions of multiple lengths in a bath
                 attn_eos_indices = input_lengths.unsqueeze(1) + 1
                 attention_target = attention_target.scatter_(dim=1, index=attn_eos_indices, value=-1)
-                
+
                 # Next we also make sure that the longest attention sequence in the batch is truncated
                 attention_target = attention_target[:, :-1]
 
